@@ -97,3 +97,10 @@ func main() {
 		fmt.Println(err)
 	}
 }
+
+func gofmtPackageTemplate(text string, data interface{}) (string, error) {
+	packageTemplate, err := template.New("").Parse(text)
+	if err != nil {
+		return "", err
+	}
+}
