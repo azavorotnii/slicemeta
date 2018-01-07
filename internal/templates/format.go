@@ -11,16 +11,20 @@ import (
 )
 
 type Config struct {
-	Comment        string
-	TypeName       string
-	ImportTypeName string
-	UseDeepEqual   bool
-	UseEqual       bool
-	PackageName    string
+	PackageName string
+	Comment     string
+	Imports     []string
+
+	TypeName string
+	Funcs    template.FuncMap
 }
 
 func FormatPackageCode(templateText string, config Config) ([]byte, error) {
-	packageTemplate, err := template.New("").Parse(templateText)
+	packageTemplate := template.New("")
+	if config.Funcs != nil {
+		packageTemplate = packageTemplate.Funcs(config.Funcs)
+	}
+	packageTemplate, err := packageTemplate.Parse(templateText)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
@@ -50,4 +54,3 @@ func FormatPackageCode(templateText string, config Config) ([]byte, error) {
 	}
 	return buffer.Bytes(), nil
 }
-

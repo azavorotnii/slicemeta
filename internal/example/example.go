@@ -2,7 +2,7 @@ package example
 
 import "time"
 
-//go:generate slicemeta -type Example -import "github.com/azavorotnii/slicemeta/internal/example" -equalityOp equal -outputDir .
+//go:generate slicemeta -type "example.Example" -import "github.com/azavorotnii/slicemeta/internal/example" -equalityOp equal -outputDir .
 type Example struct {
 	Int    int
 	String string

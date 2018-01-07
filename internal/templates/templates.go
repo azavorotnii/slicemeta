@@ -12,25 +12,19 @@ package {{.PackageName}}
 
 // {{.Comment}}
 
-{{if .UseDeepEqual}}
-import "reflect"
+{{if .Imports}}
+import (
+	{{- range .Imports}}
+	"{{.}}"
+	{{- end}}
+)
 {{end}}
-{{if .ImportTypeName}}
-import "{{.ImportTypeName}}"
-{{end}}
-
 `
 
 const containsTemplate = packageHeaderTemplate + `
 func Contains(in []{{.TypeName}}, value {{.TypeName}}) bool {
 	for _, v := range in {
-	{{- if .UseDeepEqual -}}
-		if reflect.DeepEqual(v, value) {
-	{{- else if .UseEqual -}}
-		if v.Equal(value) {
-	{{- else -}}
-		if v == value {
-	{{- end -}}
+		if {{equal "v" "value"}} {
 			return true
 		}
 	}
@@ -43,7 +37,7 @@ func Equal(a, b []{{.TypeName}}) bool {
 		return false
 	}
 	for i := 0; i < len(a); i++ {
-		if {{if .UseDeepEqual}} !reflect.DeepEqual(a[i], b[i]) {{else}} a[i] != b[i] {{end}} {
+		if !{{equal "a[i]" "b[i]"}} {
 			return false
 		}
 	}
@@ -65,7 +59,7 @@ func Filter(in []{{.TypeName}}, filter func({{.TypeName}}) bool) []{{.TypeName}}
 const indexTemplate = packageHeaderTemplate + `
 func Index(in []{{.TypeName}}, value {{.TypeName}}) int {
 	for i, v := range in {
-		if {{if .UseDeepEqual}} reflect.DeepEqual(v, value) {{else}} v == value {{end}} {
+		if {{equal "v" "value"}} {
 			return i
 		}
 	}
@@ -75,7 +69,7 @@ func Index(in []{{.TypeName}}, value {{.TypeName}}) int {
 func IndexAny(in []{{.TypeName}}, values []{{.TypeName}}) int {
 	for i, v := range in {
 		for _, value := range values {
-			if {{if .UseDeepEqual}} reflect.DeepEqual(v, value) {{else}} v == value {{end}} {
+			if {{equal "v" "value"}} {
 				return i
 			}
 		}
