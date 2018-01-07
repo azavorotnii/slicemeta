@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
+	"regexp"
 )
 
 type Config struct {
@@ -17,13 +18,29 @@ type Config struct {
 
 	TypeName string
 	Funcs    template.FuncMap
+	MethodsRegex string
 }
 
-func FormatPackageCode(templateText string, config Config) ([]byte, error) {
+func FormatPackageCode(config Config) ([]byte, error) {
 	packageTemplate := template.New("")
 	if config.Funcs != nil {
 		packageTemplate = packageTemplate.Funcs(config.Funcs)
 	}
+
+	templateText := packageHeaderTemplate
+	for methodName, methodTemplate := range PackageMethodsTemplates {
+		if config.MethodsRegex != "" {
+			matches, err := regexp.MatchString(config.MethodsRegex, methodName)
+			if err != nil {
+				return nil, errors.Wrap(err, config.MethodsRegex)
+			}
+			if !matches {
+				continue
+			}
+		}
+		templateText += methodTemplate
+	}
+
 	packageTemplate, err := packageTemplate.Parse(templateText)
 	if err != nil {
 		return nil, errors.Wrap(err, "")

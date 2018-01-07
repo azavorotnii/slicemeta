@@ -1,88 +1,104 @@
 package templates
 
-var PkgTemplates = map[string]string{
-	"contains.go": containsTemplate,
-	"equal.go":    equalTemplate,
-	"filter.go":   filterTemplate,
-	"index.go":    indexTemplate,
+var PackageMethodsTemplates = map[string]string{
+	containsMethodName:  containsMethodTemplate,
+	equalMethodName:     equalMethodTemplate,
+	filterMethodName:    filterMethodTemplate,
+	indexMethodName:     indexMethodTemplate,
+	indexAnyMethodName:  indexAnyMethodTemplate,
+	indexFuncMethodName: indexFuncMethodTemplate,
 }
 
-const packageHeaderTemplate = `
-package {{.PackageName}}
+const (
+	packageHeaderTemplate = `
+		package {{.PackageName}}
 
-// {{.Comment}}
+		// {{.Comment}}
 
-{{if .Imports}}
-import (
-	{{- range .Imports}}
-	"{{.}}"
-	{{- end}}
-)
-{{end}}
-`
+		{{if .Imports}}
+		import (
+			{{- range .Imports}}
+			"{{.}}"
+			{{- end}}
+		)
+		{{end}}
+	`
 
-const containsTemplate = packageHeaderTemplate + `
-func Contains(in []{{.TypeName}}, value {{.TypeName}}) bool {
-	for _, v := range in {
-		if {{equal "v" "value"}} {
-			return true
-		}
-	}
-	return false
-}
-`
-const equalTemplate = packageHeaderTemplate + `
-func Equal(a, b []{{.TypeName}}) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		if !{{equal "a[i]" "b[i]"}} {
+	containsMethodName     = "Contains"
+	containsMethodTemplate = `
+		func ` + containsMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) bool {
+			for _, v := range in {
+				if {{equal "v" "value"}} {
+					return true
+				}
+			}
 			return false
 		}
-	}
-	return true
-}
-`
-const filterTemplate = packageHeaderTemplate + `
-func Filter(in []{{.TypeName}}, filter func({{.TypeName}}) bool) []{{.TypeName}} {
-	var result []{{.TypeName}}
-	for _, v := range in {
-		if filter(v) {
-			result = append(result, v)
-		}
-	}
-	return result
-}
-`
+	`
 
-const indexTemplate = packageHeaderTemplate + `
-func Index(in []{{.TypeName}}, value {{.TypeName}}) int {
-	for i, v := range in {
-		if {{equal "v" "value"}} {
-			return i
-		}
-	}
-	return -1
-}
-
-func IndexAny(in []{{.TypeName}}, values []{{.TypeName}}) int {
-	for i, v := range in {
-		for _, value := range values {
-			if {{equal "v" "value"}} {
-				return i
+	equalMethodName     = "Equal"
+	equalMethodTemplate = `
+		func ` + equalMethodName + `(a, b []{{.TypeName}}) bool {
+			if len(a) != len(b) {
+				return false
 			}
+			for i := 0; i < len(a); i++ {
+				if !{{equal "a[i]" "b[i]"}} {
+					return false
+				}
+			}
+			return true
 		}
-	}
-	return -1
-}
+	`
 
-func IndexFunc(in []{{.TypeName}}, f func ({{.TypeName}}) bool) int {
-	for i, v := range in {
-		if f(v) {
-			return i
+	filterMethodName     = "Filter"
+	filterMethodTemplate = `
+		func ` + filterMethodName + `(in []{{.TypeName}}, filter func({{.TypeName}}) bool) []{{.TypeName}} {
+			var result []{{.TypeName}}
+			for _, v := range in {
+				if filter(v) {
+					result = append(result, v)
+				}
+			}
+			return result
 		}
-	}
-	return -1
-}
-`
+	`
+
+	indexMethodName     = "Index"
+	indexMethodTemplate = `
+		func ` + indexMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) int {
+			for i, v := range in {
+				if {{equal "v" "value"}} {
+					return i
+				}
+			}
+			return -1
+		}
+	`
+
+	indexAnyMethodName     = "IndexAny"
+	indexAnyMethodTemplate = `
+		func ` + indexAnyMethodName + `(in []{{.TypeName}}, values []{{.TypeName}}) int {
+			for i, v := range in {
+				for _, value := range values {
+					if {{equal "v" "value"}} {
+						return i
+					}
+				}
+			}
+			return -1
+		}
+	`
+
+	indexFuncMethodName     = "IndexFunc"
+	indexFuncMethodTemplate = `
+		func ` + indexFuncMethodName + `(in []{{.TypeName}}, f func ({{.TypeName}}) bool) int {
+			for i, v := range in {
+				if f(v) {
+					return i
+				}
+			}
+			return -1
+		}
+	`
+)
