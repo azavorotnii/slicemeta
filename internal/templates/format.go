@@ -2,13 +2,13 @@ package templates
 
 import (
 	"bytes"
-	"io"
-	"os"
+	"fmt"
 	"os/exec"
+	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
-	"regexp"
 )
 
 type Config struct {
@@ -16,8 +16,8 @@ type Config struct {
 	Comment     string
 	Imports     []string
 
-	TypeName string
-	Funcs    template.FuncMap
+	TypeName     string
+	Funcs        template.FuncMap
 	MethodsRegex string
 }
 
@@ -28,7 +28,7 @@ func FormatPackageCode(config Config) ([]byte, error) {
 	}
 
 	templateText := packageHeaderTemplate
-	for methodName, methodTemplate := range PackageMethodsTemplates {
+	for _, methodName := range methodNames {
 		if config.MethodsRegex != "" {
 			matches, err := regexp.MatchString(config.MethodsRegex, methodName)
 			if err != nil {
@@ -38,36 +38,36 @@ func FormatPackageCode(config Config) ([]byte, error) {
 				continue
 			}
 		}
-		templateText += methodTemplate
+		templateText += methodsTemplates[methodName]
 	}
 
 	packageTemplate, err := packageTemplate.Parse(templateText)
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrap(err, templateText)
 	}
 
-	formatter := exec.Command("gofmt", "-e")
-
-	out, in := io.Pipe()
-	formatter.Stdin = out
-
-	buffer := bytes.NewBuffer(nil)
-	formatter.Stdout = buffer
-	formatter.Stderr = os.Stderr
-
-	if err := formatter.Start(); err != nil {
-		return nil, errors.Wrap(err, "")
-	}
-
-	err = packageTemplate.Execute(in, config)
+	rendered := bytes.NewBuffer(nil)
+	err = packageTemplate.Execute(rendered, config)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	if err := in.Close(); err != nil {
-		return nil, errors.Wrap(err, "")
+	debugRendered := addLineNumbers(rendered.String())
+
+	gofmt := exec.Command("gofmt", "-e")
+	gofmt.Stdin = rendered
+
+	formatted, err := gofmt.CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("Error: %s\nTemplate: %v", formatted, debugRendered))
 	}
-	if err := formatter.Wait(); err != nil {
-		return nil, errors.Wrap(err, "")
+	return formatted, nil
+}
+
+func addLineNumbers(s string) string {
+	lines := strings.Split(s, "\n")
+	var out string
+	for i, line := range lines {
+		out += fmt.Sprintf("%v %v\n", i, line)
 	}
-	return buffer.Bytes(), nil
+	return out
 }

@@ -1,2 +1,3 @@
 # slicemeta
-Generates specific slices utilities (similar to "strings" pkg).
+
+Generates slice utilities package for specified element type (similar to "strings" pkg).

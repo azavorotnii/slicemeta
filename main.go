@@ -83,7 +83,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("%v: %+v\n", packageName, err)
 	}
-	if err := ioutil.WriteFile(path.Join(outputDir, packageName + ".go"), goCode, 0755); err != nil {
+	if err := ioutil.WriteFile(path.Join(outputDir, packageName+".go"), goCode, 0755); err != nil {
 		log.Fatalf("%v: %+v\n", packageName, err)
 	}
 }
