@@ -14,13 +14,14 @@ import (
 	"github.com/azavorotnii/slicemeta/internal/templates"
 )
 
-const version = "0.0.2a"
+const version = "0.0.3a"
 
 func main() {
 	var (
 		typeName    string
 		imports     flagutil.StringList
-		equalityOp  string
+		equalOp     string
+		lessOp      string
 		packageName string
 		outputDir   string
 		methods     string
@@ -28,8 +29,10 @@ func main() {
 
 	flag.StringVar(&typeName, "type", "", "type name of slice element asa it is used in other packages (with package name prefix).")
 	flag.Var(&imports, "import", "imports to be includes in generated package.")
-	flag.StringVar(&equalityOp, "equalityOp", "",
-		"can be 'operator' (default), 'equal' or 'deepequal' or custom format string with 2 '%v' arguments.")
+	flag.StringVar(&equalOp, "equal", "operator",
+		"can be 'operator', 'method', 'deep' or custom format string with 2 '%v' arguments.")
+	flag.StringVar(&lessOp, "less", "",
+		"to make sortable wrapper can be 'operator' or custom format string with 2 '%v' arguments.")
 	flag.StringVar(&packageName, "package", "", "")
 	flag.StringVar(&methods, "methods", "", "")
 	flag.StringVar(&outputDir, "outputDir", "", "")
@@ -68,15 +71,24 @@ func main() {
 		MethodsRegex: methods,
 	}
 
-	switch equalityOp {
-	case "deepequal":
-		templates.UseDeepEqual(&config)
-	case "equal":
-		templates.UseEqualMethod(&config)
+	switch equalOp {
 	case "", "operator":
 		templates.UseEqualOperator(&config)
+	case "method":
+		templates.UseEqualMethod(&config)
+	case "deep":
+		templates.UseDeepEqual(&config)
 	default:
-		templates.UseEqualFormat(&config, equalityOp)
+		templates.UseEqualFormat(&config, equalOp)
+	}
+
+	switch lessOp {
+	case "":
+		// by default no sortable wrapper
+	case "operator":
+		templates.UseLessOperator(&config)
+	default:
+		templates.UseLessFormat(&config, lessOp)
 	}
 
 	goCode, err := templates.FormatPackageCode(config)

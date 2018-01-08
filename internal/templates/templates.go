@@ -2,32 +2,36 @@ package templates
 
 import "sort"
 
-var methodsTemplates = map[string]string{
-	containsMethodName:      containsMethodTemplate,
-	containsAnyMethodName:   containsAnyMethodTemplate,
-	containsFuncMethodName:  containsFuncMethodTemplate,
-	countMethodName:         countMethodTemplate,
-	countAnyMethodName:      countAnyMethodTemplate,
-	countFuncMethodName:     countFuncMethodTemplate,
-	equalMethodName:         equalMethodTemplate,
-	filterMethodName:        filterMethodTemplate,
-	indexMethodName:         indexMethodTemplate,
-	indexAnyMethodName:      indexAnyMethodTemplate,
-	indexFuncMethodName:     indexFuncMethodTemplate,
-	lastIndexMethodName:     lastIndexMethodTemplate,
-	lastIndexAnyMethodName:  lastIndexAnyMethodTemplate,
-	lastIndexFuncMethodName: lastIndexFuncMethodTemplate,
-	mapMethodName:           mapMethodTemplate,
-	reduceMethodName:        reduceMethodTemplate,
+var methodsMap = map[string]struct {
+	templateText string
+	imports      []string
+}{
+	containsMethodName:      {containsMethodTemplate, nil},
+	containsAnyMethodName:   {containsAnyMethodTemplate, nil},
+	containsFuncMethodName:  {containsFuncMethodTemplate, nil},
+	countMethodName:         {countMethodTemplate, nil},
+	countAnyMethodName:      {countAnyMethodTemplate, nil},
+	countFuncMethodName:     {countFuncMethodTemplate, nil},
+	equalMethodName:         {equalMethodTemplate, nil},
+	filterMethodName:        {filterMethodTemplate, nil},
+	indexMethodName:         {indexMethodTemplate, nil},
+	indexAnyMethodName:      {indexAnyMethodTemplate, nil},
+	indexFuncMethodName:     {indexFuncMethodTemplate, nil},
+	lastIndexMethodName:     {lastIndexMethodTemplate, nil},
+	lastIndexAnyMethodName:  {lastIndexAnyMethodTemplate, nil},
+	lastIndexFuncMethodName: {lastIndexFuncMethodTemplate, nil},
+	mapMethodName:           {mapMethodTemplate, nil},
+	reduceMethodName:        {reduceMethodTemplate, nil},
+	shuffleMethodName:       {shuffleMethodTemplate, []string{"math/rand"}},
 }
 
-var methodNames []string
+var methodsMapKeys []string
 
 func init() {
-	for key := range methodsTemplates {
-		methodNames = append(methodNames, key)
+	for key := range methodsMap {
+		methodsMapKeys = append(methodsMapKeys, key)
 	}
-	sort.Strings(methodNames)
+	sort.Strings(methodsMapKeys)
 }
 
 const (
@@ -45,11 +49,24 @@ const (
 		{{end}}
 	`
 
+	sortableWrapper = `
+		type {{`+ titleMixin +` .TypeName}}Slice []{{.TypeName}}
+		func (s {{`+ titleMixin +` .TypeName}}Slice) Len() int {
+			return len(s)
+		}
+		func (s {{`+ titleMixin +` .TypeName}}Slice) Swap(i, j int) {
+			s[i], s[j] = s[j], s[i]
+		}
+		func (s {{`+ titleMixin +` .TypeName}}Slice) Less(i, j int) bool {
+			return {{` + lessMixin + ` "s[i]" "s[j]"}}
+		}
+	`
+
 	containsMethodName     = "Contains"
 	containsMethodTemplate = `
 		func ` + containsMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) bool {
 			for _, v := range in {
-				if {{equal "v" "value"}} {
+				if {{` + equalMixin + ` "v" "value"}} {
 					return true
 				}
 			}
@@ -62,7 +79,7 @@ const (
 		func ` + containsAnyMethodName + `(in []{{.TypeName}}, values ...{{.TypeName}}) bool {
 			for _, v := range in {
 				for _, value := range values {
-					if {{equal "v" "value"}} {
+					if {{` + equalMixin + ` "v" "value"}} {
 						return true
 					}
 				}
@@ -88,7 +105,7 @@ const (
 		func ` + countMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) int {
 			result := 0
 			for _, v := range in {
-				if {{equal "v" "value"}} {
+				if {{` + equalMixin + ` "v" "value"}} {
 					result++
 				}
 			}
@@ -102,7 +119,7 @@ const (
 			result := 0
 			for _, v := range in {
 				for _, value := range values {
-					if {{equal "v" "value"}} {
+					if {{` + equalMixin + ` "v" "value"}} {
 						result++
 						break
 					}
@@ -132,7 +149,7 @@ const (
 				return false
 			}
 			for i := 0; i < len(a); i++ {
-				if !{{equal "a[i]" "b[i]"}} {
+				if !{{` + equalMixin + ` "a[i]" "b[i]"}} {
 					return false
 				}
 			}
@@ -183,7 +200,7 @@ const (
 	indexMethodTemplate = `
 		func ` + indexMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) int {
 			for i, v := range in {
-				if {{equal "v" "value"}} {
+				if {{` + equalMixin + ` "v" "value"}} {
 					return i
 				}
 			}
@@ -195,7 +212,7 @@ const (
 	lastIndexMethodTemplate = `
 		func ` + lastIndexMethodName + `(in []{{.TypeName}}, value {{.TypeName}}) int {
 			for i := len(in)-1; i >= 0; i-- {
-				if {{equal "in[i]" "value"}} {
+				if {{` + equalMixin + ` "in[i]" "value"}} {
 					return i
 				}
 			}
@@ -208,7 +225,7 @@ const (
 		func ` + indexAnyMethodName + `(in []{{.TypeName}}, values ...{{.TypeName}}) int {
 			for i, v := range in {
 				for _, value := range values {
-					if {{equal "v" "value"}} {
+					if {{` + equalMixin + ` "v" "value"}} {
 						return i
 					}
 				}
@@ -222,7 +239,7 @@ const (
 		func ` + lastIndexAnyMethodName + `(in []{{.TypeName}}, values ...{{.TypeName}}) int {
 			for i := len(in)-1; i >= 0; i-- {
 				for _, value := range values {
-					if {{equal "in[i]" "value"}} {
+					if {{` + equalMixin + ` "in[i]" "value"}} {
 						return i
 					}
 				}
@@ -252,6 +269,16 @@ const (
 				}
 			}
 			return -1
+		}
+	`
+
+	shuffleMethodName     = "Shuffle"
+	shuffleMethodTemplate = `
+		func ` + shuffleMethodName + `(in []{{.TypeName}}) {
+			for i := 0; i < len(in); i++ {
+				j := i + rand.Int()%(len(in)-i)
+				in[i], in[j] = in[j], in[i]
+			}
 		}
 	`
 )
