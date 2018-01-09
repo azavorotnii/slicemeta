@@ -55,7 +55,9 @@ func UseLessFormat(config *Config, format string) error {
 	}
 	// check format is correct somehow?
 
-	config.Funcs[titleMixin] = strings.Title
+	config.Funcs[titleMixin] = func(typeName string) string {
+		return strings.Title(typeName[strings.LastIndex(typeName, ".")+1:])
+	}
 	config.Funcs[lessMixin] = func(l, r string) string {
 		return fmt.Sprintf(format, l, r)
 	}

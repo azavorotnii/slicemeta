@@ -43,10 +43,7 @@ func main() {
 		log.Fatal("type is mandatory argument")
 	}
 	if packageName == "" {
-		name := typeName
-		for strings.Contains(name, ".") {
-			name = name[strings.Index(name, ".")+1:]
-		}
+		name := typeName[strings.LastIndex(typeName, ".")+1:]
 		packageName = strings.ToLower(name) + "util"
 	}
 
@@ -79,7 +76,8 @@ func main() {
 	case "deep":
 		templates.UseDeepEqual(&config)
 	default:
-		templates.UseEqualFormat(&config, equalOp)
+		// needs parenteses so "!equal" will work as well
+		templates.UseEqualFormat(&config, "("+equalOp+")")
 	}
 
 	switch lessOp {

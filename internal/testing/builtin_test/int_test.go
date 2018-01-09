@@ -2,8 +2,10 @@ package builtin_test
 
 //go:generate slicemeta -type int -less operator
 import (
-	"testing"
+	"math/rand"
+	"reflect"
 	"sort"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
@@ -122,7 +124,7 @@ func TestReduce(t *testing.T) {
 	assert.Equal(t, 11520, intutil.Reduce(input, mul))
 }
 
-func TestShuffle(t *testing.T)  {
+func TestShuffle(t *testing.T) {
 	input := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 	assert.True(t, sort.IsSorted(sort.IntSlice(input)))
@@ -136,4 +138,23 @@ func TestSort(t *testing.T) {
 	assert.False(t, sort.IsSorted(input))
 	sort.Sort(input)
 	assert.True(t, sort.IsSorted(input))
+}
+
+func BenchmarkEqual(b *testing.B) {
+	const size = 100000
+	left := rand.Perm(size)
+	right := make([]int, size)
+	copy(right, left)
+
+	b.Run("DeepEqual", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			reflect.DeepEqual(left, right)
+		}
+	})
+
+	b.Run("intutil", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			intutil.Equal(left, right)
+		}
+	})
 }
